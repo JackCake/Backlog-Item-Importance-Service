@@ -121,12 +121,6 @@ public class SqlDatabaseHelper {
 		return preparedStatement;
 	}
 	
-	public ResultSet getResultSet(String query) throws SQLException {
-		Statement statement = connection.createStatement();
-		ResultSet resultSet = statement.executeQuery(query);
-		return resultSet;
-	}
-	
 	public void closeStatement(Statement statement) {
 		if(statement != null) {
 			try {

@@ -37,7 +37,7 @@ public class MySqlBacklogItemImportanceRepositoryImpl implements BacklogItemImpo
 		} catch(SQLException e) {
 			sqlDatabaseHelper.transactionError();
 			e.printStackTrace();
-			throw new Exception("Sorry, there is the problem when save the importance of the backlog item. Please try again!");
+			throw new Exception("Sorry, there is the database problem when save the importance of the backlog item. Please contact to the system administrator!");
 		} finally {
 			sqlDatabaseHelper.closePreparedStatement(preparedStatement);
 			sqlDatabaseHelper.releaseConnection();
@@ -50,17 +50,18 @@ public class MySqlBacklogItemImportanceRepositoryImpl implements BacklogItemImpo
 		PreparedStatement preparedStatement = null;
 		try {
 			sqlDatabaseHelper.transactionStart();
-			String sql = String.format("Delete From %s Where %s = '%s'",
+			BacklogItemImportanceData data = backlogItemImportanceMapper.transformToBacklogItemImportanceData(backlogItemImportance);
+			String sql = String.format("Delete From %s Where %s = ?",
 					BacklogItemImportanceTable.tableName,
-					BacklogItemImportanceTable.backlogItemId,
-					backlogItemImportance.getBacklogItemId());
+					BacklogItemImportanceTable.backlogItemId);
 			preparedStatement = sqlDatabaseHelper.getPreparedStatement(sql);
+			preparedStatement.setString(1, data.getBacklogItemId());
 			preparedStatement.executeUpdate();
 			sqlDatabaseHelper.transactionEnd();
 		}  catch(SQLException e) {
 			sqlDatabaseHelper.transactionError();
 			e.printStackTrace();
-			throw new Exception("Sorry, there is the problem when remove the importance of the backlog item. Please try again!");
+			throw new Exception("Sorry, there is the database problem when remove the importance of the backlog item. Please contact to the system administrator!");
 		} finally {
 			sqlDatabaseHelper.closePreparedStatement(preparedStatement);
 			sqlDatabaseHelper.releaseConnection();
@@ -70,14 +71,16 @@ public class MySqlBacklogItemImportanceRepositoryImpl implements BacklogItemImpo
 	@Override
 	public synchronized BacklogItemImportance getBacklogItemImportanceByBacklogItemId(String backlogItemId) {
 		sqlDatabaseHelper.connectToDatabase();
+		PreparedStatement preparedStatement = null;
 		ResultSet resultSet = null;
 		BacklogItemImportance backlogItemImportance = null;
 		try {
-			String query = String.format("Select * From %s Where %s = '%s'",
+			String sql = String.format("Select * From %s Where %s = ?",
 					BacklogItemImportanceTable.tableName, 
-					BacklogItemImportanceTable.backlogItemId, 
-					backlogItemId);
-			resultSet = sqlDatabaseHelper.getResultSet(query);
+					BacklogItemImportanceTable.backlogItemId);
+			preparedStatement = sqlDatabaseHelper.getPreparedStatement(sql);
+			preparedStatement.setString(1, backlogItemId);
+			resultSet = preparedStatement.executeQuery();
 			while (resultSet.next()) {
 				int importance = resultSet.getInt(BacklogItemImportanceTable.importance);
 				
@@ -91,6 +94,7 @@ public class MySqlBacklogItemImportanceRepositoryImpl implements BacklogItemImpo
 			e.printStackTrace();
 		} finally {
 			sqlDatabaseHelper.closeResultSet(resultSet);
+			sqlDatabaseHelper.closePreparedStatement(preparedStatement);
 			sqlDatabaseHelper.releaseConnection();
 		}
 		return backlogItemImportance;

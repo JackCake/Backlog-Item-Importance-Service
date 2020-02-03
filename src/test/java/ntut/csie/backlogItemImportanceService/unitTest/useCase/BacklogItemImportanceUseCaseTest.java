@@ -1,8 +1,7 @@
 package ntut.csie.backlogItemImportanceService.unitTest.useCase;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -16,6 +15,8 @@ import ntut.csie.backlogItemImportanceService.controller.backlogItemImportance.D
 import ntut.csie.backlogItemImportanceService.controller.backlogItemImportance.EditBacklogItemImportanceRestfulAPI;
 import ntut.csie.backlogItemImportanceService.controller.backlogItemImportance.GetBacklogItemImportanceByBacklogItemIdRestfulAPI;
 import ntut.csie.backlogItemImportanceService.controller.history.GetHistoriesByBacklogItemIdRestfulAPI;
+import ntut.csie.backlogItemImportanceService.model.backlogItemImportance.BacklogItemImportance;
+import ntut.csie.backlogItemImportanceService.unitTest.factory.TestFactory;
 import ntut.csie.backlogItemImportanceService.unitTest.repository.FakeBacklogItemImportanceRepository;
 import ntut.csie.backlogItemImportanceService.unitTest.repository.FakeEventStore;
 import ntut.csie.backlogItemImportanceService.useCase.DomainEventListener;
@@ -46,11 +47,19 @@ public class BacklogItemImportanceUseCaseTest {
 	private FakeBacklogItemImportanceRepository fakeBacklogItemImportanceRepository;
 	private FakeEventStore fakeEventStore;
 	
+	private TestFactory testFactory;
+	
+	private String backlogItemId;
+	
 	@Before
 	public void setUp() {
 		fakeBacklogItemImportanceRepository = new FakeBacklogItemImportanceRepository();
 		fakeEventStore = new FakeEventStore();
 		DomainEventListener.getInstance().init(fakeEventStore);
+		
+		testFactory = new TestFactory(fakeBacklogItemImportanceRepository);
+		
+		backlogItemId = "1";
 	}
 	
 	@After
@@ -61,76 +70,121 @@ public class BacklogItemImportanceUseCaseTest {
 	
 	@Test
 	public void Should_Success_When_AddBacklogItemImportance() {
-		String backlogItemId = "1";
 		int importance = 90;
 		
-		assertNull(null, getBacklogItemImportanceByBacklogItemId(backlogItemId));
+		AddBacklogItemImportanceOutput output = addBacklogItemImportance(importance, backlogItemId);
 		
-		AddBacklogItemImportanceOutput output = addBacklogItemImportance(backlogItemId, importance);
-		
-		assertTrue(output.isAddSuccess());
-		assertNotNull(null, getBacklogItemImportanceByBacklogItemId(backlogItemId));
+		boolean isAddSuccess = output.isAddSuccess();
+		assertTrue(isAddSuccess);
 	}
 	
 	@Test
-	public void Should_ReturnBacklogItemImportance_When_GetBacklogItemImportanceByBacklogItemId() {
-		String backlogItemId = "1";
+	public void Should_ReturnErrorMessage_When_AddBacklogItemImportanceWithNullBacklogItemId() {
+		int importance = 90;
+		
+		AddBacklogItemImportanceOutput output = addBacklogItemImportance(importance, null);
+		
+		boolean isAddSuccess = output.isAddSuccess();
+		String errorMessage = output.getErrorMessage();
+		String expectedErrorMessage = "The backlog item id of the backlog item importance should be required!\n";
+		assertFalse(isAddSuccess);
+		assertEquals(expectedErrorMessage, errorMessage);
+	}
+	
+	@Test
+	public void Should_ReturnErrorMessage_When_AddBacklogItemImportanceWithEmptyBacklogItemId() {
+		int importance = 90;
+		
+		AddBacklogItemImportanceOutput output = addBacklogItemImportance(importance, "");
+		
+		boolean isAddSuccess = output.isAddSuccess();
+		String errorMessage = output.getErrorMessage();
+		String expectedErrorMessage = "The backlog item id of the backlog item importance should be required!\n";
+		assertFalse(isAddSuccess);
+		assertEquals(expectedErrorMessage, errorMessage);
+	}
+	
+	@Test
+	public void Should_ReturnBacklogItemImportance_When_GetBacklogItemImportance() {
 		int importance = 100;
 		
-		addBacklogItemImportance(backlogItemId, importance);
+		testFactory.newBacklogItemImportance(importance, backlogItemId);
 		
-		BacklogItemImportanceModel backlogItemImportance = getBacklogItemImportanceByBacklogItemId(backlogItemId);
+		GetBacklogItemImportanceByBacklogItemIdOutput output = getBacklogItemImportanceByBacklogItemId(backlogItemId);
+		BacklogItemImportanceModel backlogItemImportance = output.getBacklogItemImportance();
 		
 		assertEquals(importance, backlogItemImportance.getImportance());
 	}
 	
 	@Test
 	public void Should_Success_When_EditBacklogItemImportance() {
-		String backlogItemId = "1";
 		int importance = 100;
 		
-		addBacklogItemImportance(backlogItemId, importance);
+		BacklogItemImportance backlogItemImportance = testFactory.newBacklogItemImportance(importance, backlogItemId);
 		
 		int editedImportance = 80;
 		
-		EditBacklogItemImportanceOutput output = editBacklogItemImportance(backlogItemId, editedImportance);
+		EditBacklogItemImportanceOutput output = editBacklogItemImportance(editedImportance, backlogItemId);
 		
-		BacklogItemImportanceModel backlogItemImportance = getBacklogItemImportanceByBacklogItemId(backlogItemId);
-		
-		assertTrue(output.isEditSuccess());
+		boolean isEditSuccess = output.isEditSuccess();
+		assertTrue(isEditSuccess);
 		assertEquals(editedImportance, backlogItemImportance.getImportance());
 	}
 	
 	@Test
-	public void Should_Success_When_DeleteBacklogItemImportance() {
-		String backlogItemId = "1";
-		int importance = 65;
+	public void Should_ReturnErrorMessage_When_EditNotExistBacklogItemImportance() {
+		int editedImportance = 80;
 		
-		addBacklogItemImportance(backlogItemId, importance);
+		EditBacklogItemImportanceOutput output = editBacklogItemImportance(editedImportance, null);
 		
-		assertNotNull(getBacklogItemImportanceByBacklogItemId(backlogItemId));
-		
-		DeleteBacklogItemImportanceOutput output = deleteBacklogItemImportance(backlogItemId);
-		
-		assertTrue(output.isDeleteSuccess());
-		assertNull(getBacklogItemImportanceByBacklogItemId(backlogItemId));
+		boolean isEditSuccess = output.isEditSuccess();
+		String errorMessage = output.getErrorMessage();
+		String expectedErrorMessage = "Sorry, the importance of the backlog item is not exist!";
+		assertFalse(isEditSuccess);
+		assertEquals(expectedErrorMessage, errorMessage);
 	}
 	
 	@Test
-	public void Should_ReturnHistoryList_When_GetHistoriesByBacklogItemId() {
-		String backlogItemId = "1";
+	public void Should_Success_When_DeleteBacklogItemImportance() {
+		int importance = 65;
+		
+		testFactory.newBacklogItemImportance(importance, backlogItemId);
+		
+		DeleteBacklogItemImportanceOutput output = deleteBacklogItemImportance(backlogItemId);
+		
+		boolean isDeleteSuccess = output.isDeleteSuccess();
+		assertTrue(isDeleteSuccess);
+	}
+	
+	@Test
+	public void Should_ReturnErrorMessage_When_DeleteNotExistBacklogItemImportance() {
+		DeleteBacklogItemImportanceOutput output = deleteBacklogItemImportance(backlogItemId);
+		
+		boolean isDeleteSuccess = output.isDeleteSuccess();
+		String errorMessage = output.getErrorMessage();
+		String expectedErrorMessage = "Sorry, the importance of the backlog item is not exist!";
+		assertFalse(isDeleteSuccess);
+		assertEquals(expectedErrorMessage, errorMessage);
+	}
+	
+	@Test
+	public void Should_ReturnHistoryList_When_GetHistoriesOfBacklogItem() {
 		int importance = 100;
 		
-		addBacklogItemImportance(backlogItemId, importance);
+		addBacklogItemImportance(importance, backlogItemId);
 		
 		int editedImportance = 80;
 		
-		editBacklogItemImportance(backlogItemId, editedImportance);
+		editBacklogItemImportance(editedImportance, backlogItemId);
 		
-		assertEquals(1, getHistoriesByBacklogItemId(backlogItemId).size());
+		GetHistoriesByBacklogItemIdOutput output = getHistoriesByBacklogItemId(backlogItemId);
+		List<HistoryModel> historyList = output.getHistoryList();
+		
+		int numberOfHistories = 1;
+		assertEquals(numberOfHistories, historyList.size());
 	}
 	
-	private AddBacklogItemImportanceOutput addBacklogItemImportance(String backlogItemId, int importance) {
+	private AddBacklogItemImportanceOutput addBacklogItemImportance(int importance, String backlogItemId) {
 		AddBacklogItemImportanceUseCase addBacklogItemImportanceUseCase = new AddBacklogItemImportanceUseCaseImpl(fakeBacklogItemImportanceRepository);
 		AddBacklogItemImportanceInput input = (AddBacklogItemImportanceInput) addBacklogItemImportanceUseCase;
 		input.setBacklogItemId(backlogItemId);
@@ -140,16 +194,16 @@ public class BacklogItemImportanceUseCaseTest {
 		return output;
 	}
 	
-	private BacklogItemImportanceModel getBacklogItemImportanceByBacklogItemId(String backlogItemId) {
+	private GetBacklogItemImportanceByBacklogItemIdOutput getBacklogItemImportanceByBacklogItemId(String backlogItemId) {
 		GetBacklogItemImportanceByBacklogItemIdUseCase getBacklogItemImportanceByBacklogItemIdUseCase = new GetBacklogItemImportanceByBacklogItemIdUseCaseImpl(fakeBacklogItemImportanceRepository);
 		GetBacklogItemImportanceByBacklogItemIdInput input = (GetBacklogItemImportanceByBacklogItemIdInput) getBacklogItemImportanceByBacklogItemIdUseCase;
 		input.setBacklogItemId(backlogItemId);
 		GetBacklogItemImportanceByBacklogItemIdOutput output = new GetBacklogItemImportanceByBacklogItemIdRestfulAPI();
 		getBacklogItemImportanceByBacklogItemIdUseCase.execute(input, output);
-		return output.getBacklogItemImportance();
+		return output;
 	}
 	
-	private EditBacklogItemImportanceOutput editBacklogItemImportance(String backlogItemId, int importance) {
+	private EditBacklogItemImportanceOutput editBacklogItemImportance(int importance, String backlogItemId) {
 		EditBacklogItemImportanceUseCase editBacklogItemImportanceUseCase = new EditBacklogItemImportanceUseCaseImpl(fakeBacklogItemImportanceRepository);
 		EditBacklogItemImportanceInput input = (EditBacklogItemImportanceInput) editBacklogItemImportanceUseCase;
 		input.setBacklogItemId(backlogItemId);
@@ -168,12 +222,12 @@ public class BacklogItemImportanceUseCaseTest {
 		return output;
 	}
 	
-	private List<HistoryModel> getHistoriesByBacklogItemId(String backlogItemId) {
+	private GetHistoriesByBacklogItemIdOutput getHistoriesByBacklogItemId(String backlogItemId) {
 		GetHistoriesByBacklogItemIdUseCase getHistoriesByBacklogItemIdUseCase = new GetHistoriesByBacklogItemIdUseCaseImpl(fakeEventStore);
 		GetHistoriesByBacklogItemIdInput input = (GetHistoriesByBacklogItemIdInput) getHistoriesByBacklogItemIdUseCase;
 		input.setBacklogItemId(backlogItemId);
 		GetHistoriesByBacklogItemIdOutput output = new GetHistoriesByBacklogItemIdRestfulAPI();
 		getHistoriesByBacklogItemIdUseCase.execute(input, output);
-		return output.getHistoryList();
+		return output;
 	}
 }

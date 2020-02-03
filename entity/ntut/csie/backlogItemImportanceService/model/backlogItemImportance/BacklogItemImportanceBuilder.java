@@ -18,7 +18,15 @@ public class BacklogItemImportanceBuilder {
 		return this;
 	}
 	
-	public BacklogItemImportance build() {
+	public BacklogItemImportance build() throws Exception {
+		String exceptionMessage = "";
+		if(backlogItemId == null || backlogItemId.isEmpty()) {
+			exceptionMessage += "The backlog item id of the backlog item importance should be required!\n";
+		}
+		if(!exceptionMessage.isEmpty()) {
+			throw new Exception(exceptionMessage);
+		}
+		
 		BacklogItemImportance backlogItemImportance = new BacklogItemImportance(backlogItemId, importance);
 		return backlogItemImportance;
 	}

@@ -42,7 +42,7 @@ public class EditBacklogItemImportanceRestfulAPI implements EditBacklogItemImpor
 		} catch (JSONException e) {
 			e.printStackTrace();
 			output.setEditSuccess(false);
-			output.setErrorMessage("Sorry, please try again!");
+			output.setErrorMessage("Sorry, there is the service problem when edit the importance of the backlog item. Please contact to the system administrator!");
 			return output;
 		}
 		

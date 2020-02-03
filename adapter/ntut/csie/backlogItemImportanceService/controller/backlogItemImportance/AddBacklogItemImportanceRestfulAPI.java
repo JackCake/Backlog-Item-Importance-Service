@@ -40,7 +40,7 @@ public class AddBacklogItemImportanceRestfulAPI implements AddBacklogItemImporta
 		} catch (JSONException e) {
 			e.printStackTrace();
 			output.setAddSuccess(false);
-			output.setErrorMessage("Sorry, please try again!");
+			output.setErrorMessage("Sorry, there is the service problem when add the importance of the backlog item. Please contact to the system administrator!");
 			return output;
 		}
 		

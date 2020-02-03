@@ -16,11 +16,11 @@ public class AddBacklogItemImportanceUseCaseImpl implements AddBacklogItemImport
 	
 	@Override
 	public void execute(AddBacklogItemImportanceInput input, AddBacklogItemImportanceOutput output) {
-		BacklogItemImportance backlogItemImportance = BacklogItemImportanceBuilder.newInstance()
-				.backlogItemId(input.getBacklogItemId())
-				.importance(input.getImportance())
-				.build();
 		try {
+			BacklogItemImportance backlogItemImportance = BacklogItemImportanceBuilder.newInstance()
+					.backlogItemId(input.getBacklogItemId())
+					.importance(input.getImportance())
+					.build();
 			backlogItemImportanceRepository.save(backlogItemImportance);
 		} catch (Exception e) {
 			output.setAddSuccess(false);
